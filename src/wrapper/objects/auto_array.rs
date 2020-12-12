@@ -1,10 +1,6 @@
-use log::debug;
-
 use crate::objects::release_mode::ReleaseMode;
 use crate::{errors::*, objects::JObject, sys, JNIEnv};
 use jni_sys::jboolean;
-use std::any::type_name;
-use std::any::TypeId;
 use std::ptr::NonNull;
 
 /// Auto-release wrapper for pointer-based generic arrays.
@@ -13,141 +9,39 @@ use std::ptr::NonNull;
 ///
 /// These arrays need to be released through a call to Release<Type>ArrayElements.
 /// This wrapper provides automatic array release when it goes out of scope.
-pub struct AutoArray<'a: 'b, 'b, T: 'static> {
-    obj: JObject<'a>,
-    ptr: NonNull<T>,
-    mode: ReleaseMode,
+pub(crate) struct AutoArray<'a, 'b, T: 'static> {
+    /// pub to be accessed from specifically typed subclass
+    pub obj: JObject<'a>,
+    /// pub to be accessed from specifically typed subclass
+    pub ptr: NonNull<T>,
+    /// pub to be accessed from specifically typed subclass
+    pub mode: ReleaseMode,
     is_copy: bool,
-    env: &'b JNIEnv<'a>,
-    type_id: TypeId,
+    /// pub to be accessed from specifically typed subclass
+    pub env: &'a JNIEnv<'b>,
 }
 
 impl<'a, 'b, T: 'static> AutoArray<'a, 'b, T> {
-    /// Creates a new auto-release wrapper for a pointer-based generic array
-    ///
-    /// Once this wrapper goes out of scope, `Release<Type>ArrayElements` will be
-    /// called on the object. While wrapped, the object can be accessed via
-    /// the `From` impl.
-    pub fn new(env: &'b JNIEnv<'a>, obj: JObject<'a>, mode: ReleaseMode) -> Result<Self> {
-        let mut is_copy: jboolean = 0xff;
+    /// Generic / low level object creation
+    pub fn new(
+        env: &'a JNIEnv<'b>,
+        obj: JObject<'a>,
+        ptr: *mut T,
+        is_copy: jboolean,
+        mode: ReleaseMode,
+    ) -> Result<Self> {
         Ok(AutoArray {
             obj,
-            ptr: {
-                let internal = env.get_native_interface();
-                let type_id = TypeId::of::<T>();
-                let ptr = if type_id == TypeId::of::<i32>() {
-                    jni_non_void_call!(internal, GetIntArrayElements, *obj, &mut is_copy) as *mut T
-                } else if type_id == TypeId::of::<i64>() {
-                    jni_non_void_call!(internal, GetLongArrayElements, *obj, &mut is_copy) as *mut T
-                } else if type_id == TypeId::of::<i8>() {
-                    jni_non_void_call!(internal, GetByteArrayElements, *obj, &mut is_copy) as *mut T
-                } else if type_id == TypeId::of::<u8>() {
-                    jni_non_void_call!(internal, GetBooleanArrayElements, *obj, &mut is_copy)
-                        as *mut T
-                } else if type_id == TypeId::of::<u16>() {
-                    jni_non_void_call!(internal, GetCharArrayElements, *obj, &mut is_copy) as *mut T
-                } else if type_id == TypeId::of::<i16>() {
-                    jni_non_void_call!(internal, GetShortArrayElements, *obj, &mut is_copy)
-                        as *mut T
-                } else if type_id == TypeId::of::<f32>() {
-                    jni_non_void_call!(internal, GetFloatArrayElements, *obj, &mut is_copy)
-                        as *mut T
-                } else if type_id == TypeId::of::<f64>() {
-                    jni_non_void_call!(internal, GetDoubleArrayElements, *obj, &mut is_copy)
-                        as *mut T
-                } else {
-                    return Err(Error::WrongJValueType(type_name::<T>(), "?"));
-                };
-                NonNull::new(ptr).ok_or(Error::NullPtr("Non-null ptr expected"))?
-            },
+            ptr: NonNull::new(ptr).ok_or(Error::NullPtr("Non-null ptr expected"))?,
             mode,
             is_copy: is_copy == sys::JNI_TRUE,
             env,
-            type_id: TypeId::of::<T>(),
         })
     }
 
     /// Get a reference to the wrapped pointer
     pub fn as_ptr(&self) -> *mut T {
         self.ptr.as_ptr()
-    }
-
-    /// Commits the changes to the array, if it is a copy
-    pub fn commit(&mut self) -> Result<()> {
-        self.release_array_elements(sys::JNI_COMMIT)
-    }
-
-    fn release_array_elements(&mut self, mode: i32) -> Result<()> {
-        let env = self.env.get_native_interface();
-        let ptr = self.ptr.as_ptr();
-        if self.type_id == TypeId::of::<i32>() {
-            jni_void_call!(
-                env,
-                ReleaseIntArrayElements,
-                *self.obj,
-                ptr as *mut i32,
-                mode
-            );
-        } else if self.type_id == TypeId::of::<i64>() {
-            jni_void_call!(
-                env,
-                ReleaseLongArrayElements,
-                *self.obj,
-                ptr as *mut i64,
-                mode
-            );
-        } else if self.type_id == TypeId::of::<i8>() {
-            jni_void_call!(
-                env,
-                ReleaseByteArrayElements,
-                *self.obj,
-                ptr as *mut i8,
-                mode
-            );
-        } else if self.type_id == TypeId::of::<u8>() {
-            jni_void_call!(
-                env,
-                ReleaseBooleanArrayElements,
-                *self.obj,
-                ptr as *mut u8,
-                mode
-            );
-        } else if self.type_id == TypeId::of::<u16>() {
-            jni_void_call!(
-                env,
-                ReleaseCharArrayElements,
-                *self.obj,
-                ptr as *mut u16,
-                mode
-            );
-        } else if self.type_id == TypeId::of::<i16>() {
-            jni_void_call!(
-                env,
-                ReleaseShortArrayElements,
-                *self.obj,
-                ptr as *mut i16,
-                mode
-            );
-        } else if self.type_id == TypeId::of::<f32>() {
-            jni_void_call!(
-                env,
-                ReleaseFloatArrayElements,
-                *self.obj,
-                ptr as *mut f32,
-                mode
-            );
-        } else if self.type_id == TypeId::of::<f64>() {
-            jni_void_call!(
-                env,
-                ReleaseDoubleArrayElements,
-                *self.obj,
-                ptr as *mut f64,
-                mode
-            );
-        } else {
-            return Err(Error::WrongJValueType(type_name::<T>(), "?"));
-        }
-        Ok(())
     }
 
     /// Don't commit the changes to the array on release (if it is a copy).
@@ -164,18 +58,25 @@ impl<'a, 'b, T: 'static> AutoArray<'a, 'b, T> {
     }
 }
 
-impl<'a, 'b, T: 'static> Drop for AutoArray<'a, 'b, T> {
-    fn drop(&mut self) {
-        let res = self.release_array_elements(self.mode as i32);
-        match res {
-            Ok(()) => {}
-            Err(e) => debug!("error releasing array: {:#?}", e),
-        }
-    }
-}
-
 impl<'a, T> From<&'a AutoArray<'a, '_, T>> for *mut T {
     fn from(other: &'a AutoArray<T>) -> *mut T {
         other.as_ptr()
+    }
+}
+
+/// Trait to define AutoArray type-dependent parts
+/// Implement this in specific Auto<Type>Array, to call the proper Get/Release<Type>ArrayElements JNI methods
+pub trait TypeArray<'c, 'd> {
+    /// Implement this to call the proper Get<Type>ArrayElements JNI method
+    fn new(env: &'c JNIEnv<'d>, obj: JObject<'c>, mode: ReleaseMode) -> Result<Self>
+    where
+        Self: std::marker::Sized;
+
+    /// Implement this to call the proper Release<Type>ArrayElements JNI method
+    fn release(&mut self, mode: i32) -> Result<()>;
+
+    /// Commits the changes to the array, if it is a copy
+    fn commit_default(&mut self) -> Result<()> {
+        self.release(sys::JNI_COMMIT)
     }
 }
