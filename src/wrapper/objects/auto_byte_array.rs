@@ -6,24 +6,22 @@ use crate::wrapper::objects::ReleaseMode;
 use crate::{errors::*, objects::JObject, JNIEnv};
 
 /// Auto-release wrapper for pointer-based byte arrays.
-pub struct AutoByteArray<'a: 'b, 'b> {
-    common: AutoArray<'a, 'b, jbyte>,
-}
+pub struct AutoByteArray<'a: 'b, 'b>(AutoArray<'a, 'b, jbyte>);
 
 impl<'a, 'b> AutoByteArray<'a, 'b> {
     /// Get a reference to the wrapped pointer
     pub fn as_ptr(&self) -> *mut jbyte {
-        self.common.as_ptr()
+        self.0.as_ptr()
     }
 
     /// Discard the changes to the byte array if it is a copy
     pub fn discard(&mut self) {
-        self.common.discard();
+        self.0.discard();
     }
 
     /// Indicates if the array is a copy or not
     pub fn is_copy(&self) -> bool {
-        self.common.is_copy()
+        self.0.is_copy()
     }
 
     /// Commits the changes to the array, if it is a copy
@@ -42,18 +40,16 @@ impl<'a, 'b> TypeArray<'a, 'b> for AutoByteArray<'a, 'b> {
         let mut is_copy: jboolean = 0xff;
         let internal = env.get_native_interface();
         let ptr = jni_non_void_call!(internal, GetByteArrayElements, *obj, &mut is_copy);
-        Ok(AutoByteArray {
-            common: AutoArray::new(env, obj, ptr, is_copy, mode)?,
-        })
+        Ok(AutoByteArray(AutoArray::new(env, obj, ptr, is_copy, mode)?))
     }
 
     fn release(&mut self, mode: i32) -> Result<()> {
-        let env = self.common.env.get_native_interface();
-        let ptr = self.common.ptr.as_ptr();
+        let env = self.0.env.get_native_interface();
+        let ptr = self.0.ptr.as_ptr();
         jni_void_call!(
             env,
             ReleaseByteArrayElements,
-            *self.common.obj,
+            *self.0.obj,
             ptr as *mut i8,
             mode
         );
@@ -63,7 +59,7 @@ impl<'a, 'b> TypeArray<'a, 'b> for AutoByteArray<'a, 'b> {
 
 impl<'a, 'b> Drop for AutoByteArray<'a, 'b> {
     fn drop(&mut self) {
-        let res = self.release(self.common.mode as i32);
+        let res = self.release(self.0.mode as i32);
         match res {
             Ok(()) => {}
             Err(e) => debug!("error releasing array: {:#?}", e),
