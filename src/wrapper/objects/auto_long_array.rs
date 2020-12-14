@@ -6,7 +6,7 @@ use crate::wrapper::objects::ReleaseMode;
 use crate::{errors::*, objects::JObject, JNIEnv};
 
 /// Auto-release wrapper for pointer-based long arrays.
-pub struct AutoLongArray<'a: 'b, 'b>(AutoArray<'a, 'b, jlong>);
+pub struct AutoLongArray<'a: 'b, 'b>(pub(crate) AutoArray<'a, 'b, jlong>);
 
 impl<'a, 'b> AutoLongArray<'a, 'b> {
     /// Get a reference to the wrapped pointer

@@ -6,7 +6,7 @@ use crate::wrapper::objects::ReleaseMode;
 use crate::{errors::*, objects::JObject, JNIEnv};
 
 /// Auto-release wrapper for pointer-based byte arrays.
-pub struct AutoByteArray<'a: 'b, 'b>(AutoArray<'a, 'b, jbyte>);
+pub struct AutoByteArray<'a: 'b, 'b>(pub(crate) AutoArray<'a, 'b, jbyte>);
 
 impl<'a, 'b> AutoByteArray<'a, 'b> {
     /// Get a reference to the wrapped pointer
