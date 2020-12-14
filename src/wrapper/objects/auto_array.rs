@@ -37,25 +37,21 @@ impl<'a, 'b, T: 'static> AutoArray<'a, 'b, T> {
                 let internal = env.get_native_interface();
                 let type_id = TypeId::of::<T>();
                 let ptr = if type_id == TypeId::of::<i32>() {
-                    jni_non_void_call!(internal, GetIntArrayElements, *obj, &mut is_copy) as *mut T
+                    jni_unchecked!(internal, GetIntArrayElements, *obj, &mut is_copy) as *mut T
                 } else if type_id == TypeId::of::<i64>() {
-                    jni_non_void_call!(internal, GetLongArrayElements, *obj, &mut is_copy) as *mut T
+                    jni_unchecked!(internal, GetLongArrayElements, *obj, &mut is_copy) as *mut T
                 } else if type_id == TypeId::of::<i8>() {
-                    jni_non_void_call!(internal, GetByteArrayElements, *obj, &mut is_copy) as *mut T
+                    jni_unchecked!(internal, GetByteArrayElements, *obj, &mut is_copy) as *mut T
                 } else if type_id == TypeId::of::<u8>() {
-                    jni_non_void_call!(internal, GetBooleanArrayElements, *obj, &mut is_copy)
-                        as *mut T
+                    jni_unchecked!(internal, GetBooleanArrayElements, *obj, &mut is_copy) as *mut T
                 } else if type_id == TypeId::of::<u16>() {
-                    jni_non_void_call!(internal, GetCharArrayElements, *obj, &mut is_copy) as *mut T
+                    jni_unchecked!(internal, GetCharArrayElements, *obj, &mut is_copy) as *mut T
                 } else if type_id == TypeId::of::<i16>() {
-                    jni_non_void_call!(internal, GetShortArrayElements, *obj, &mut is_copy)
-                        as *mut T
+                    jni_unchecked!(internal, GetShortArrayElements, *obj, &mut is_copy) as *mut T
                 } else if type_id == TypeId::of::<f32>() {
-                    jni_non_void_call!(internal, GetFloatArrayElements, *obj, &mut is_copy)
-                        as *mut T
+                    jni_unchecked!(internal, GetFloatArrayElements, *obj, &mut is_copy) as *mut T
                 } else if type_id == TypeId::of::<f64>() {
-                    jni_non_void_call!(internal, GetDoubleArrayElements, *obj, &mut is_copy)
-                        as *mut T
+                    jni_unchecked!(internal, GetDoubleArrayElements, *obj, &mut is_copy) as *mut T
                 } else {
                     return Err(Error::WrongJValueType(type_name::<T>(), "?"));
                 };
