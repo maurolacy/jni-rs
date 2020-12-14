@@ -1,8 +1,8 @@
 use log::debug;
 
-use crate::sys::{jboolean, jlong};
-use crate::wrapper::objects::auto_array::{AutoArray, TypeArray};
-use crate::wrapper::objects::ReleaseMode;
+use crate::objects::auto_array::{AutoArray, TypeArray};
+use crate::objects::release_mode::ReleaseMode;
+use crate::sys::{jboolean, jlong, jsize};
 use crate::{errors::*, objects::JObject, JNIEnv};
 
 /// Auto-release wrapper for pointer-based long arrays.
@@ -27,6 +27,11 @@ impl<'a, 'b> AutoLongArray<'a, 'b> {
     /// Commits the changes to the array, if it is a copy
     pub fn commit(&mut self) -> Result<()> {
         TypeArray::commit(self)
+    }
+
+    /// Returns the array size
+    pub fn size(&self) -> Result<jsize> {
+        self.0.size()
     }
 }
 

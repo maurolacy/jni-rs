@@ -1,6 +1,6 @@
 use crate::objects::release_mode::ReleaseMode;
 use crate::{errors::*, objects::JObject, sys, JNIEnv};
-use jni_sys::jboolean;
+use jni_sys::{jboolean, jsize};
 use std::ptr::NonNull;
 
 /// Auto-release wrapper for pointer-based generic arrays.
@@ -55,6 +55,11 @@ impl<'a, 'b, T: 'static> AutoArray<'a, 'b, T> {
     /// Indicates if the array is a copy or not
     pub fn is_copy(&self) -> bool {
         self.is_copy
+    }
+
+    /// Returns the array size
+    pub fn size(&self) -> Result<jsize> {
+        self.env.get_array_length(*self.obj)
     }
 }
 

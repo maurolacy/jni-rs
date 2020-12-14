@@ -1,6 +1,6 @@
 use log::debug;
 
-use crate::sys::{jboolean, jbyte};
+use crate::sys::{jboolean, jbyte, jsize};
 use crate::wrapper::objects::auto_array::{AutoArray, TypeArray};
 use crate::wrapper::objects::ReleaseMode;
 use crate::{errors::*, objects::JObject, JNIEnv};
@@ -27,6 +27,11 @@ impl<'a, 'b> AutoByteArray<'a, 'b> {
     /// Commits the changes to the array, if it is a copy
     pub fn commit(&mut self) -> Result<()> {
         TypeArray::commit(self)
+    }
+
+    /// Returns the array size
+    pub fn size(&self) -> Result<jsize> {
+        self.0.size()
     }
 }
 

@@ -332,6 +332,9 @@ pub fn get_byte_array_elements() {
             .get_byte_array_elements(java_array, ReleaseMode::CopyBack)
             .unwrap();
 
+        // Check array size
+        assert_eq!(auto_ptr.size().unwrap(), 3);
+
         // Check pointer access
         let ptr = auto_ptr.as_ptr();
         assert_eq!(unsafe { *ptr.offset(0) }, 1);
@@ -389,6 +392,9 @@ pub fn get_long_array_elements() {
             .get_long_array_elements(java_array, ReleaseMode::CopyBack)
             .unwrap();
 
+        // Check array size
+        assert_eq!(auto_ptr.size().unwrap(), 3);
+
         // Check pointer access
         let ptr = auto_ptr.as_ptr();
         assert_eq!(unsafe { *ptr.offset(0) }, 1);
@@ -427,7 +433,7 @@ pub fn get_long_array_elements() {
 }
 
 #[test]
-#[ignore]
+#[ignore] // Disabled until issue #283 is resolved
 pub fn get_long_array_elements_commit() {
     let env = attach_current_thread();
 
@@ -494,6 +500,9 @@ pub fn get_primitive_array_critical() {
             .get_primitive_array_critical(java_array, ReleaseMode::CopyBack)
             .unwrap();
 
+        // Check array size
+        assert_eq!(auto_ptr.size().unwrap(), 3);
+
         // Get pointer
         let ptr = auto_ptr.as_ptr();
 
@@ -523,6 +532,25 @@ pub fn get_primitive_array_critical() {
     assert_eq!(res[0], 2);
     assert_eq!(res[1], 3);
     assert_eq!(res[2], 4);
+}
+
+#[test]
+#[ignore] // Disabled until issue #283 is resolved
+pub fn get_primitive_array_critical_commit() {
+    let env = attach_current_thread();
+
+    // Create original Java array
+    let java_array = env
+        .new_long_array(3)
+        .expect("JNIEnv#new_long_array must create a java array with given size");
+
+    // Get primitive array elements auto wrapper
+    let mut auto_ptr = env
+        .get_primitive_array_critical(java_array, ReleaseMode::CopyBack)
+        .unwrap();
+
+    // Call commit
+    auto_ptr.commit().unwrap();
 }
 
 #[test]
