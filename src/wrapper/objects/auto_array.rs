@@ -76,7 +76,7 @@ pub trait TypeArray<'c, 'd> {
     fn release(&mut self, mode: i32) -> Result<()>;
 
     /// Commits the changes to the array, if it is a copy
-    fn commit_default(&mut self) -> Result<()> {
+    fn commit(&mut self) -> Result<()> {
         self.release(sys::JNI_COMMIT)
     }
 }

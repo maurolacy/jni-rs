@@ -26,7 +26,7 @@ impl<'a, 'b> AutoLongArray<'a, 'b> {
 
     /// Commits the changes to the array, if it is a copy
     pub fn commit(&mut self) -> Result<()> {
-        self.commit_default()
+        TypeArray::commit(self)
     }
 }
 
