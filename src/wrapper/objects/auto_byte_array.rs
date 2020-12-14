@@ -1,37 +1,18 @@
 use log::debug;
 
-use crate::sys::{jboolean, jbyte, jsize};
+use crate::sys::{jboolean, jbyte};
 use crate::wrapper::objects::auto_array::{AutoArray, TypeArray};
 use crate::wrapper::objects::ReleaseMode;
 use crate::{errors::*, objects::JObject, JNIEnv};
+use std::ops::Deref;
 
 /// Auto-release wrapper for pointer-based byte arrays.
 pub struct AutoByteArray<'a: 'b, 'b>(pub(crate) AutoArray<'a, 'b, jbyte>);
 
 impl<'a, 'b> AutoByteArray<'a, 'b> {
-    /// Get a reference to the wrapped pointer
-    pub fn as_ptr(&self) -> *mut jbyte {
-        self.0.as_ptr()
-    }
-
-    /// Discard the changes to the byte array if it is a copy
-    pub fn discard(&mut self) {
-        self.0.discard();
-    }
-
-    /// Indicates if the array is a copy or not
-    pub fn is_copy(&self) -> bool {
-        self.0.is_copy()
-    }
-
     /// Commits the changes to the array, if it is a copy
-    pub fn commit(&mut self) -> Result<()> {
+    fn commit(&mut self) -> Result<()> {
         TypeArray::commit(self)
-    }
-
-    /// Returns the array size
-    pub fn size(&self) -> Result<jsize> {
-        self.0.size()
     }
 }
 
@@ -59,6 +40,14 @@ impl<'a, 'b> TypeArray<'a, 'b> for AutoByteArray<'a, 'b> {
             mode
         );
         Ok(())
+    }
+}
+
+impl<'a, 'b> Deref for AutoByteArray<'a, 'b> {
+    type Target = AutoArray<'a, 'b, jbyte>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 

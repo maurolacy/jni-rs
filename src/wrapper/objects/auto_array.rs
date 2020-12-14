@@ -9,7 +9,7 @@ use std::ptr::NonNull;
 ///
 /// These arrays need to be released through a call to Release<Type>ArrayElements.
 /// This wrapper provides automatic array release when it goes out of scope.
-pub(crate) struct AutoArray<'a, 'b, T: 'static> {
+pub struct AutoArray<'a, 'b, T: 'static> {
     /// pub to be accessed from specifically typed subclass
     pub obj: JObject<'a>,
     /// pub to be accessed from specifically typed subclass
